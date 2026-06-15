@@ -1,30 +1,38 @@
-# 思考记录
+# 思考记录 · Thought Journal
 
-我自己想要的一个小东西:每天脑子里冒出来的念头,懒得打字,就**说一句、自动转成文字**存下来。攒一阵子之后,让 AI 帮我回看——最近老在想什么、对某件事的看法是怎么一点点变的。
+A voice-first journaling app. Speak your thoughts, get them transcribed, and let an LLM surface the themes you keep returning to — and how your thinking shifts over time.
 
-边用边做,主要是给自己用。
+## Features
 
-## 能干嘛
+- **Voice capture** — start talking and your speech is transcribed in real time (Chinese); manual typing is supported too.
+- **Automatic daily summary** — each day's notes are condensed into a short recap, generated on its own.
+- **7-day insight** — across recent days, the app pulls out recurring themes, your current stance on each, and how it has evolved.
 
-- **说出来就记下** —— 点一下开始说,中文实时转文字;不想说也能直接打字。
-- **每天自动小结** —— 当天记的东西,它自己总结一句,不用我去点。
-- **近 7 天状态** —— 跨几天,把反复出现的主题、我的核心观点、想法的变化拎出来。
+Entries are stored locally in the browser; nothing is uploaded.
 
-记录都只存在本地浏览器里,不上传。
+## Tech Stack
 
-## 跑起来
+| Area | Choice |
+|------|--------|
+| Frontend | Vite · React · TypeScript (mobile-first, no backend) |
+| Speech-to-text | Web Speech API (`zh-CN`) |
+| Analysis | Groq — Llama 3.3 70B / Qwen3-32B, called from the client |
+| iOS | Capacitor (native shell, in progress) |
+
+## Getting Started
 
 ```bash
 npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:5173`。语音用浏览器自带的识别(Chrome 上最稳),要给麦克风权限。主题分析用 Groq 的免费模型——在「设置」里填个自己的 key 就行(console.groq.com 免费拿,不用绑卡)。
+Open `http://localhost:5173` in Chrome (most reliable for speech recognition) and allow microphone access.
 
-## 用的东西
+For theme analysis, add a free Groq API key under **Settings** — create one at [console.groq.com](https://console.groq.com) (no card required). The key is stored only in your browser.
 
-Vite + React + TypeScript,纯前端。语音 = Web Speech API,分析 = Groq(Llama 3.3 70B / Qwen3-32B)。现在在用 Capacitor 往 iOS 上搬,想做成 app。
+## Roadmap
 
-## 还在弄
-
-自己边用边改,功能慢慢加。
+- [x] Voice capture and local storage
+- [x] Daily summary and 7-day theme analysis
+- [ ] Native iOS app via Capacitor → App Store
+- [ ] Cross-device cloud sync
