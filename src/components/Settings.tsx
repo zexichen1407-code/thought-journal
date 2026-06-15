@@ -23,25 +23,25 @@ export function SettingsPanel({ settings, onChange }: Props) {
   return (
     <div className="panel">
       <label className="field">
-        <span>DeepSeek API Key</span>
+        <span>Groq API Key</span>
         <input
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="sk-..."
+          placeholder="gsk_..."
           autoComplete="off"
         />
       </label>
       <p className="muted small">
-        在 platform.deepseek.com 注册并创建 key（新账号送 500 万免费 token，30 天内有效）。key
-        只存在你这个浏览器里，不会上传到任何服务器。
+        在 console.groq.com 登录 → API Keys → Create key（免费,不用绑卡,扣不了费）。key
+        只存在你这个浏览器里,不会上传到任何服务器。
       </p>
 
       <label className="field">
-        <span>模型</span>
+        <span>模型（均免费）</span>
         <select value={model} onChange={(e) => setModel(e.target.value)}>
-          <option value="deepseek-chat">deepseek-chat（V4 Flash，免费/最便宜）</option>
-          <option value="deepseek-v4-flash">deepseek-v4-flash（显式名，7/24 后用这个）</option>
+          <option value="llama-3.3-70b-versatile">Llama 3.3 70B（默认,额度大）</option>
+          <option value="qwen/qwen3-32b">Qwen3 32B（中文更细,记录少时用）</option>
         </select>
       </label>
 

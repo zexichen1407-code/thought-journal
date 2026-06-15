@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Entry, Settings, ThemeAnalysis } from '../types';
-import { analyzeThemes } from '../lib/deepseek';
+import { analyzeThemes } from '../lib/analyze';
 import { saveAnalysis } from '../lib/storage';
 
 interface Props {
@@ -11,21 +11,20 @@ interface Props {
   onGoToSettings: () => void;
 }
 
-function formatDate(ms: number): string {
-  const d = new Date(ms);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function ThemesView({ entries, settings, analysis, onAnalyzed, onGoToSettings }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Only the last 7 days — "最近的状态".
+  const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recent = entries.filter((e) => e.createdAt >= since);
+  const upToDate = analysis !== null && analysis.entryCount === recent.length;
 
   const run = async () => {
     setError(null);
     setLoading(true);
     try {
-      const result = await analyzeThemes(entries, settings.apiKey, settings.model);
+      const result = await analyzeThemes(recent, settings.apiKey, settings.model);
       saveAnalysis(result);
       onAnalyzed(result);
     } catch (e) {
@@ -35,10 +34,17 @@ export function ThemesView({ entries, settings, analysis, onAnalyzed, onGoToSett
     }
   };
 
+  // Auto-generate on open when the last-7-day records changed.
+  useEffect(() => {
+    if (!settings.apiKey || recent.length === 0 || loading || upToDate) return;
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.apiKey, settings.model, recent.length]);
+
   if (!settings.apiKey) {
     return (
       <div className="panel">
-        <p>主题分析需要一个 DeepSeek API key。</p>
+        <p>近 7 天状态需要一个 Groq API key（免费,不用绑卡）。</p>
         <button className="primary" onClick={onGoToSettings}>
           去设置里填 key
         </button>
@@ -46,32 +52,26 @@ export function ThemesView({ entries, settings, analysis, onAnalyzed, onGoToSett
     );
   }
 
-  if (entries.length === 0) {
+  if (recent.length === 0) {
     return (
       <div className="panel">
-        <p className="muted">先去「记录」攒几条想法，再来生成主题分析。</p>
+        <p className="muted">近 7 天还没有记录。去「记录」说点什么吧。</p>
       </div>
     );
   }
-
-  const stale = analysis !== null && analysis.entryCount < entries.length;
 
   return (
     <div className="themes">
       <div className="panel">
         <div className="row between">
-          <button className="primary" onClick={run} disabled={loading}>
-            {loading ? '分析中…' : analysis ? '重新分析' : '生成主题分析'}
+          <div>
+            <strong>近 7 天状态</strong>
+            <div className="muted small">基于最近 7 天的 {recent.length} 条记录</div>
+          </div>
+          <button className="ghost small" onClick={run} disabled={loading}>
+            {loading ? '分析中…' : '刷新'}
           </button>
-          {analysis && (
-            <span className="muted small">
-              上次分析 {formatDate(analysis.analyzedAt)}（{analysis.entryCount} 条）
-            </span>
-          )}
         </div>
-        {stale && !loading && (
-          <p className="muted small">已有新记录，点「重新分析」更新主题。</p>
-        )}
         {error && <div className="error">分析失败：{error}</div>}
       </div>
 

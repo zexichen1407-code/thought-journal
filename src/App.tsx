@@ -2,10 +2,23 @@ import { useState } from 'react';
 import type { Entry, Settings, ThemeAnalysis } from './types';
 import { loadAnalysis, loadEntries, loadSettings } from './lib/storage';
 import { Recorder } from './components/Recorder';
-import { EntryList } from './components/EntryList';
+import { DayList } from './components/DayList';
 import { ThemesView } from './components/ThemesView';
 import { SettingsPanel } from './components/Settings';
 import './App.css';
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 5 || h >= 18) return '晚上好';
+  if (h < 11) return '早上好';
+  return '下午好';
+}
+
+function todayLabel(): string {
+  const wd = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const d = new Date();
+  return `${d.getMonth() + 1}月${d.getDate()}日 · ${wd[d.getDay()]}`;
+}
 
 type Tab = 'record' | 'history' | 'themes' | 'settings';
 
@@ -31,8 +44,19 @@ export default function App() {
       </header>
 
       <main className="app-main">
-        {tab === 'record' && <Recorder onSaved={refreshEntries} />}
-        {tab === 'history' && <EntryList entries={entries} onChange={refreshEntries} />}
+        {tab === 'record' && (
+          <>
+            <div className="greeting">
+              <div className="greeting-date">{todayLabel()}</div>
+              <h2>Zack 先生，{getGreeting()}</h2>
+              <p>今天有什么思考想要记录?</p>
+            </div>
+            <Recorder onSaved={refreshEntries} />
+          </>
+        )}
+        {tab === 'history' && (
+          <DayList entries={entries} settings={settings} onChange={refreshEntries} />
+        )}
         {tab === 'themes' && (
           <ThemesView
             entries={entries}

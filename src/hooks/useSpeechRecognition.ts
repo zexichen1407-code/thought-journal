@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { SpeechRecognition as NativeSpeech } from '@capacitor-community/speech-recognition';
 
 interface UseSpeechRecognition {
   supported: boolean;
@@ -11,28 +13,34 @@ interface UseSpeechRecognition {
   reset: () => void;
 }
 
-function getCtor(): { new (): SpeechRecognition } | null {
+const isNative = Capacitor.isNativePlatform();
+
+function getWebCtor(): { new (): SpeechRecognition } | null {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
-// Wraps the browser SpeechRecognition API for continuous Chinese dictation.
-// Chrome ends a session after a pause, so we auto-restart while the user is
-// still recording to support long thinking sessions.
+// Works two ways:
+// - In the browser: Web Speech API (webkitSpeechRecognition), auto-restart for long sessions.
+// - In the native iOS app: @capacitor-community/speech-recognition (iOS Speech framework),
+//   which ends a session on a pause; we commit that segment and restart while recording.
 export function useSpeechRecognition(lang = 'zh-CN'): UseSpeechRecognition {
-  const ctor = getCtor();
-  const supported = ctor !== null;
-
   const [listening, setListening] = useState(false);
   const [finalText, setFinalText] = useState('');
   const [interimText, setInterimText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const wantListeningRef = useRef(false);
+  const wantRef = useRef(false);
+  const committedRef = useRef(''); // finalized text (native)
+  const segmentRef = useRef(''); // current live segment (native)
+  const webRef = useRef<SpeechRecognition | null>(null);
 
+  const webCtor = isNative ? null : getWebCtor();
+  const supported = isNative || webCtor !== null;
+
+  // ---- Web Speech API ----
   useEffect(() => {
-    if (!ctor) return;
-    const recognition = new ctor();
+    if (isNative || !webCtor) return;
+    const recognition = new webCtor();
     recognition.lang = lang;
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -49,54 +57,99 @@ export function useSpeechRecognition(lang = 'zh-CN'): UseSpeechRecognition {
       if (finalChunk) setFinalText((prev) => prev + finalChunk);
       setInterimText(interim);
     };
-
     recognition.onerror = (event) => {
-      // "no-speech" / "aborted" are expected during normal use; ignore them.
-      if (event.error !== 'no-speech' && event.error !== 'aborted') {
-        setError(event.error);
-      }
+      if (event.error !== 'no-speech' && event.error !== 'aborted') setError(event.error);
     };
-
     recognition.onend = () => {
       setInterimText('');
-      if (wantListeningRef.current) {
+      if (wantRef.current) {
         try {
           recognition.start();
         } catch {
-          // start() throws if called too quickly; the next onend retries.
+          // restart throttled; next onend retries
         }
       } else {
         setListening(false);
       }
     };
 
-    recognitionRef.current = recognition;
+    webRef.current = recognition;
     return () => {
-      wantListeningRef.current = false;
+      wantRef.current = false;
       recognition.onend = null;
       recognition.abort();
     };
-  }, [ctor, lang]);
+  }, [webCtor, lang]);
 
-  const start = useCallback(() => {
-    if (!recognitionRef.current) return;
-    setError(null);
-    wantListeningRef.current = true;
-    setListening(true);
-    try {
-      recognitionRef.current.start();
-    } catch {
-      // Already started — ignore.
-    }
+  // ---- Native iOS speech ----
+  useEffect(() => {
+    if (!isNative) return;
+    const partial = NativeSpeech.addListener('partialResults', (data: { matches?: string[] }) => {
+      const seg = data.matches?.[0] ?? '';
+      segmentRef.current = seg;
+      setInterimText(seg);
+    });
+    const state = NativeSpeech.addListener(
+      'listeningState',
+      (data: { status?: string }) => {
+        if (data.status !== 'stopped') return;
+        if (segmentRef.current) {
+          committedRef.current += segmentRef.current;
+          setFinalText(committedRef.current);
+        }
+        segmentRef.current = '';
+        setInterimText('');
+        if (wantRef.current) {
+          NativeSpeech.start({ language: lang, partialResults: true, popup: false }).catch((e) =>
+            setError(String(e)),
+          );
+        } else {
+          setListening(false);
+        }
+      },
+    );
+
+    return () => {
+      wantRef.current = false;
+      void partial.then((h) => h.remove());
+      void state.then((h) => h.remove());
+      NativeSpeech.stop().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const start = useCallback(() => {
+    setError(null);
+    wantRef.current = true;
+    setListening(true);
+    if (isNative) {
+      NativeSpeech.requestPermissions()
+        .then(() =>
+          NativeSpeech.start({ language: lang, partialResults: true, popup: false }),
+        )
+        .catch((e) => {
+          setError(String(e));
+          setListening(false);
+        });
+    } else {
+      try {
+        webRef.current?.start();
+      } catch {
+        // already started
+      }
+    }
+  }, [lang]);
+
   const stop = useCallback(() => {
-    wantListeningRef.current = false;
+    wantRef.current = false;
     setListening(false);
-    recognitionRef.current?.stop();
+    if (isNative) NativeSpeech.stop().catch(() => {});
+    else webRef.current?.stop();
   }, []);
 
   const reset = useCallback(() => {
+    committedRef.current = '';
+    segmentRef.current = '';
     setFinalText('');
     setInterimText('');
   }, []);

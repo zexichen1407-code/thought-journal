@@ -29,3 +29,11 @@ export interface ThemeAnalysis {
   analyzedAt: number; // epoch ms
   entryCount: number;
 }
+
+export interface DaySummary {
+  count: number; // entry count this summary was built from
+  text: string;
+}
+
+// Keyed by date string YYYY-MM-DD.
+export type DailySummaries = Record<string, DaySummary>;

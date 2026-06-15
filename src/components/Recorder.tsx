@@ -59,17 +59,6 @@ export function Recorder({ onSaved }: Props) {
 
   return (
     <div className="panel">
-      <div className="mic-wrap">
-        <button
-          className={listening ? 'mic recording' : 'mic'}
-          onClick={listening ? stop : start}
-          aria-label={listening ? '停止录音' : '开始录音'}
-        >
-          {listening ? '■' : '●'}
-        </button>
-        <div className="mic-label">{listening ? '正在听…再点一下停止' : '点一下开始说'}</div>
-      </div>
-
       {listening && interimText && <div className="interim">{interimText}</div>}
       {error && <div className="error">语音识别出错：{error}</div>}
 
@@ -77,7 +66,7 @@ export function Recorder({ onSaved }: Props) {
         className="draft"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder="说话会自动转成文字出现在这里，也可以手动修改…"
+        placeholder="点下面的按钮说话，文字会自动出现在这里，也可以手动修改…"
         rows={6}
       />
 
@@ -88,6 +77,17 @@ export function Recorder({ onSaved }: Props) {
         <button className="ghost" onClick={clear} disabled={!draft && !listening}>
           清空
         </button>
+      </div>
+
+      <div className="mic-wrap">
+        <button
+          className={listening ? 'mic recording' : 'mic'}
+          onClick={listening ? stop : start}
+          aria-label={listening ? '停止录音' : '开始录音'}
+        >
+          {listening ? '■' : '●'}
+        </button>
+        <div className="mic-label">{listening ? '正在听…再点一下停止' : '点一下开始说'}</div>
       </div>
     </div>
   );

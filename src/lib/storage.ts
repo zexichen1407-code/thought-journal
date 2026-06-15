@@ -1,8 +1,9 @@
-import type { Entry, Settings, ThemeAnalysis } from '../types';
+import type { DailySummaries, Entry, Settings, ThemeAnalysis } from '../types';
 
 const ENTRIES_KEY = 'tj_entries';
 const SETTINGS_KEY = 'tj_settings';
 const ANALYSIS_KEY = 'tj_analysis';
+const DAILY_KEY = 'tj_dailies';
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -40,10 +41,14 @@ export function deleteEntry(id: string): void {
   write(ENTRIES_KEY, entries.filter((e) => e.id !== id));
 }
 
+const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
+const MODELS = [DEFAULT_MODEL, 'qwen/qwen3-32b'];
+
 export function loadSettings(): Settings {
-  const settings = read<Settings>(SETTINGS_KEY, { apiKey: '', model: 'deepseek-chat' });
-  // Coerce any model id left over from a previous provider to a DeepSeek one.
-  if (!settings.model.startsWith('deepseek')) settings.model = 'deepseek-chat';
+  const settings = read<Settings>(SETTINGS_KEY, { apiKey: '', model: DEFAULT_MODEL });
+  // Coerce any model id left over from a previous provider to a supported one.
+  if (!MODELS.includes(settings.model)) settings.model = DEFAULT_MODEL;
+  if (typeof settings.apiKey !== 'string') settings.apiKey = '';
   return settings;
 }
 
@@ -57,4 +62,12 @@ export function loadAnalysis(): ThemeAnalysis | null {
 
 export function saveAnalysis(analysis: ThemeAnalysis): void {
   write(ANALYSIS_KEY, analysis);
+}
+
+export function loadDailySummaries(): DailySummaries {
+  return read<DailySummaries>(DAILY_KEY, {});
+}
+
+export function saveDailySummaries(map: DailySummaries): void {
+  write(DAILY_KEY, map);
 }
