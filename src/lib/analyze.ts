@@ -3,6 +3,9 @@ import type { Entry, ThemeAnalysis } from '../types';
 // Groq: free tier with NO credit card (so it can never charge you),
 // fast and reliable, OpenAI-compatible, browser-callable (CORS *).
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+// 内置 key(仓库私有),模型固定,用户无需任何设置。
+const GROQ_KEY = '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';
+const MODEL = 'llama-3.3-70b-versatile';
 
 const SYSTEM_PROMPT = `你是用户的思考伙伴。用户用语音记录每天的思考,你的任务是跨越多天的记录,提炼他反复在想的主题,并追踪每个主题下他的观点是怎么随时间演变的。
 
@@ -67,19 +70,15 @@ interface GroqResponse {
   error?: { message?: string };
 }
 
-export async function analyzeThemes(
-  entries: Entry[],
-  apiKey: string,
-  model: string,
-): Promise<ThemeAnalysis> {
+export async function analyzeThemes(entries: Entry[]): Promise<ThemeAnalysis> {
   const res = await fetch(GROQ_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${GROQ_KEY}`,
     },
     body: JSON.stringify({
-      model,
+      model: MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: buildUserPrompt(entries) },
@@ -93,10 +92,10 @@ export async function analyzeThemes(
 
   if (!res.ok) {
     const msg = data.error?.message ?? '';
-    if (res.status === 401) throw new Error('API key 无效,请到设置里检查。');
+    if (res.status === 401) throw new Error('接口鉴权失败,请稍后再试。');
     if (res.status === 429) throw new Error('免费额度暂时用满(限流),过一会儿再试。');
     if (res.status === 413) {
-      throw new Error('记录太多,超出免费模型每分钟额度。去设置换 Llama 3.3 70B(额度更大),或减少记录后再试。');
+      throw new Error('这次记录太多,超出单次额度,过一会儿或减少记录后再试。');
     }
     throw new Error(`Groq 报错 ${res.status}：${msg.slice(0, 200)}`);
   }
@@ -108,7 +107,7 @@ export async function analyzeThemes(
   try {
     parsed = JSON.parse(extractJson(content));
   } catch {
-    throw new Error('模型返回的不是有效 JSON,请重试或在设置里换个模型。');
+    throw new Error('模型返回的不是有效 JSON,请重试。');
   }
 
   return {
@@ -120,11 +119,7 @@ export async function analyzeThemes(
 }
 
 // Short, warm summary of one day's thoughts — auto-run on the home page.
-export async function summarizeDay(
-  entries: Entry[],
-  apiKey: string,
-  model: string,
-): Promise<string> {
+export async function summarizeDay(entries: Entry[]): Promise<string> {
   const text = [...entries]
     .sort((a, b) => a.createdAt - b.createdAt)
     .map((e) => e.text)
@@ -134,10 +129,10 @@ export async function summarizeDay(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${GROQ_KEY}`,
     },
     body: JSON.stringify({
-      model,
+      model: MODEL,
       messages: [
         {
           role: 'system',

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DailySummaries, Entry, Settings } from '../types';
+import type { DailySummaries, Entry } from '../types';
 import { summarizeDay } from '../lib/analyze';
 import {
   deleteEntry,
@@ -10,7 +10,6 @@ import {
 
 interface Props {
   entries: Entry[];
-  settings: Settings;
   onChange: () => void;
 }
 
@@ -59,7 +58,7 @@ function groupByDay(entries: Entry[]): Day[] {
     .sort((a, b) => (a.date < b.date ? 1 : -1)); // newest day first
 }
 
-export function DayList({ entries, settings, onChange }: Props) {
+export function DayList({ entries, onChange }: Props) {
   const days = groupByDay(entries);
   const [summaries, setSummaries] = useState<DailySummaries>(() => loadDailySummaries());
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -69,7 +68,7 @@ export function DayList({ entries, settings, onChange }: Props) {
 
   // Generate any missing/stale day summary, one at a time (avoids rate limits).
   useEffect(() => {
-    if (!settings.apiKey || generatingRef.current) return;
+    if (generatingRef.current) return;
     const need = days.find((d) => {
       const s = summaries[d.date];
       return !s || s.count !== d.entries.length;
@@ -78,7 +77,7 @@ export function DayList({ entries, settings, onChange }: Props) {
 
     generatingRef.current = true;
     let cancelled = false;
-    summarizeDay(need.entries, settings.apiKey, settings.model)
+    summarizeDay(need.entries)
       .then((text) => {
         if (cancelled) return;
         setSummaries((prev) => {
@@ -97,7 +96,7 @@ export function DayList({ entries, settings, onChange }: Props) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, settings.apiKey, settings.model, summaries]);
+  }, [entries, summaries]);
 
   if (days.length === 0) {
     return (
@@ -142,7 +141,7 @@ export function DayList({ entries, settings, onChange }: Props) {
                 <span className="day-count">{day.entries.length} 条</span>
               </div>
               <div className="day-summary">
-                {s ? s.text : settings.apiKey ? '小结生成中…' : '在设置里填 key 后自动小结'}
+                {s ? s.text : '小结生成中…'}
               </div>
               <div className="day-toggle">{open ? '收起 ▲' : '展开详情 ▼'}</div>
             </button>

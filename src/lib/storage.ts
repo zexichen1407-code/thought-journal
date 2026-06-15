@@ -1,7 +1,6 @@
-import type { DailySummaries, Entry, Settings, ThemeAnalysis } from '../types';
+import type { DailySummaries, Entry, ThemeAnalysis } from '../types';
 
 const ENTRIES_KEY = 'tj_entries';
-const SETTINGS_KEY = 'tj_settings';
 const ANALYSIS_KEY = 'tj_analysis';
 const DAILY_KEY = 'tj_dailies';
 
@@ -39,21 +38,6 @@ export function updateEntry(id: string, text: string): void {
 export function deleteEntry(id: string): void {
   const entries = read<Entry[]>(ENTRIES_KEY, []);
   write(ENTRIES_KEY, entries.filter((e) => e.id !== id));
-}
-
-const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
-const MODELS = [DEFAULT_MODEL, 'qwen/qwen3-32b'];
-
-export function loadSettings(): Settings {
-  const settings = read<Settings>(SETTINGS_KEY, { apiKey: '', model: DEFAULT_MODEL });
-  // Coerce any model id left over from a previous provider to a supported one.
-  if (!MODELS.includes(settings.model)) settings.model = DEFAULT_MODEL;
-  if (typeof settings.apiKey !== 'string') settings.apiKey = '';
-  return settings;
-}
-
-export function saveSettings(settings: Settings): void {
-  write(SETTINGS_KEY, settings);
 }
 
 export function loadAnalysis(): ThemeAnalysis | null {

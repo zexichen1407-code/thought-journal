@@ -4,11 +4,6 @@ export interface Entry {
   text: string;
 }
 
-export interface Settings {
-  apiKey: string;
-  model: string;
-}
-
 export interface ThemeEvolution {
   date: string; // YYYY-MM-DD
   thought: string;

@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react';
-import type { Entry, Settings, ThemeAnalysis } from '../types';
+import type { Entry, ThemeAnalysis } from '../types';
 import { analyzeThemes } from '../lib/analyze';
 import { saveAnalysis } from '../lib/storage';
 
 interface Props {
   entries: Entry[];
-  settings: Settings;
   analysis: ThemeAnalysis | null;
   onAnalyzed: (analysis: ThemeAnalysis) => void;
-  onGoToSettings: () => void;
 }
 
-export function ThemesView({ entries, settings, analysis, onAnalyzed, onGoToSettings }: Props) {
+export function ThemesView({ entries, analysis, onAnalyzed }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +22,7 @@ export function ThemesView({ entries, settings, analysis, onAnalyzed, onGoToSett
     setError(null);
     setLoading(true);
     try {
-      const result = await analyzeThemes(recent, settings.apiKey, settings.model);
+      const result = await analyzeThemes(recent);
       saveAnalysis(result);
       onAnalyzed(result);
     } catch (e) {
@@ -36,21 +34,10 @@ export function ThemesView({ entries, settings, analysis, onAnalyzed, onGoToSett
 
   // Auto-generate on open when the last-7-day records changed.
   useEffect(() => {
-    if (!settings.apiKey || recent.length === 0 || loading || upToDate) return;
+    if (recent.length === 0 || loading || upToDate) return;
     run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.apiKey, settings.model, recent.length]);
-
-  if (!settings.apiKey) {
-    return (
-      <div className="panel">
-        <p>近 7 天状态需要一个 Groq API key（免费,不用绑卡）。</p>
-        <button className="primary" onClick={onGoToSettings}>
-          去设置里填 key
-        </button>
-      </div>
-    );
-  }
+  }, [recent.length]);
 
   if (recent.length === 0) {
     return (
