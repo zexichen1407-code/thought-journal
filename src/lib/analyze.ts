@@ -1,10 +1,10 @@
 import type { Entry, ThemeAnalysis } from '../types';
 
-// Groq: free tier with NO credit card (so it can never charge you),
-// fast and reliable, OpenAI-compatible, browser-callable (CORS *).
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-// 内置 key(仓库私有),模型固定,用户无需任何设置。
-const GROQ_KEY = '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';
+// Groq (OpenAI-compatible) via a server-side proxy at /api/groq.
+// The API key lives ONLY on the server — Cloudflare Pages Function env var
+// GROQ_API_KEY in production, .env.local in dev — never in this bundle.
+// So the repo and the deployed JS can be public without leaking the key.
+const API_URL = '/api/groq';
 const MODEL = 'llama-3.3-70b-versatile';
 
 const SYSTEM_PROMPT = `你是用户的思考伙伴。用户用语音记录每天的思考,你的任务是跨越多天的记录,提炼他反复在想的主题,并追踪每个主题下他的观点是怎么随时间演变的。
@@ -71,11 +71,10 @@ interface GroqResponse {
 }
 
 export async function analyzeThemes(entries: Entry[]): Promise<ThemeAnalysis> {
-  const res = await fetch(GROQ_URL, {
+  const res = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROQ_KEY}`,
     },
     body: JSON.stringify({
       model: MODEL,
@@ -125,11 +124,10 @@ export async function summarizeDay(entries: Entry[]): Promise<string> {
     .map((e) => e.text)
     .join('\n');
 
-  const res = await fetch(GROQ_URL, {
+  const res = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${GROQ_KEY}`,
     },
     body: JSON.stringify({
       model: MODEL,
