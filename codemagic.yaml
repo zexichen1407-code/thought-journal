@@ -1,0 +1,50 @@
+# Codemagic CI/CD — 在云端 Mac 上构建「思考记录」iOS app 并上传 TestFlight。
+#
+# 首次运行前,在 Codemagic 网站上做这几件事(都是一次性):
+#   1. 用 GitHub 登录 codemagic.io,选这个仓库(thought-journal)。
+#   2. Teams → Integrations → App Store Connect:用你的 App Store Connect API key
+#      新建一个集成,记下它的名字,填到下面 integrations.app_store_connect。
+#   3. 在 App Store Connect 里先建好 app(Bundle ID = com.zexichen.thoughtjournal)。
+#   4. 触发构建。Codemagic 会自动管理签名证书/描述文件。
+workflows:
+  ios-testflight:
+    name: 思考记录 iOS → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      # 改成你在 Codemagic 里建的 App Store Connect 集成的名字:
+      app_store_connect: CHANGE_ME_APP_STORE_CONNECT_KEY
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.zexichen.thoughtjournal
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 22
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: 安装 npm 依赖
+        script: npm ci
+      - name: 构建 web + 同步进 iOS 工程
+        script: |
+          npm run build
+          npx cap sync ios
+      - name: 安装 CocoaPods
+        script: |
+          cd ios/App && pod install
+      - name: 套用签名描述文件
+        script: xcode-project use-profiles
+      - name: 构建 IPA
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
