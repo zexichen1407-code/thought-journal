@@ -2,6 +2,7 @@
   "name": "thought-journal-real",
   "main": "worker.js",
   "compatibility_date": "2024-11-06",
+  "keep_vars": true,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
