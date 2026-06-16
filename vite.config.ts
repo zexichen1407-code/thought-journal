@@ -1,6 +1,8 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 // Dev-only mirror of the Cloudflare Pages Function: serves POST /api/groq locally,
 // reading the key from .env.local (gitignored) so `npm run dev` works without a key
 // ever reaching the client bundle.
@@ -48,8 +50,8 @@ function groqDevProxy(key: string): Plugin {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react(), groqDevProxy(env.GROQ_API_KEY ?? '')],
+    plugins: [react(), groqDevProxy(env.GROQ_API_KEY ?? ''), cloudflare()],
     server: { host: true, allowedHosts: true },
     preview: { host: true, allowedHosts: true },
-  }
+  };
 })
