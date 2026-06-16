@@ -1,10 +1,15 @@
+import { Capacitor } from '@capacitor/core';
 import type { Entry, ThemeAnalysis } from '../types';
 
-// Groq (OpenAI-compatible) via a server-side proxy at /api/groq.
-// The API key lives ONLY on the server — Cloudflare Pages Function env var
-// GROQ_API_KEY in production, .env.local in dev — never in this bundle.
-// So the repo and the deployed JS can be public without leaking the key.
-const API_URL = '/api/groq';
+// Groq (OpenAI-compatible) via a server-side proxy that holds the API key.
+// The key lives ONLY on the server (Cloudflare Worker env var GROQ_API_KEY, or
+// .env.local in web dev) — never in this bundle, so the app and repo stay key-free.
+// Web runs same-origin, so a relative path works. The native iOS app runs from
+// capacitor://localhost, so it must call the deployed Worker by its absolute URL.
+const API_BASE = Capacitor.isNativePlatform()
+  ? 'https://thought-journal-real.zexichen1407.workers.dev'
+  : '';
+const API_URL = `${API_BASE}/api/groq`;
 const MODEL = 'llama-3.3-70b-versatile';
 
 const SYSTEM_PROMPT = `你是用户的思考伙伴。用户用语音记录每天的思考,你的任务是跨越多天的记录,提炼他反复在想的主题,并追踪每个主题下他的观点是怎么随时间演变的。
