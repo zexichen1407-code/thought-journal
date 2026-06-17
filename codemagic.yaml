@@ -14,6 +14,8 @@ workflows:
     integrations:
       app_store_connect: MuseKey
     environment:
+      groups:
+        - ios_signing
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -34,7 +36,7 @@ workflows:
       - name: 设置签名(首次自动创建证书 + 描述文件)
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @env:CERTIFICATE_PRIVATE_KEY
           keychain add-certificates
           xcode-project use-profiles
       - name: 构建 IPA
