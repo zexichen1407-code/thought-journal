@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.zexichen.thoughtjournal',
-  appName: '思考记录',
+  appName: 'Muse',
   webDir: 'dist',
   ios: {
     contentInset: 'always',

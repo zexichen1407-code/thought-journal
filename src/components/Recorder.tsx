@@ -84,9 +84,7 @@ export function Recorder({ onSaved }: Props) {
           className={listening ? 'mic recording' : 'mic'}
           onClick={listening ? stop : start}
           aria-label={listening ? '停止录音' : '开始录音'}
-        >
-          {listening ? '■' : '●'}
-        </button>
+        />
         <div className="mic-label">{listening ? '正在听…再点一下停止' : '点一下开始说'}</div>
       </div>
     </div>
