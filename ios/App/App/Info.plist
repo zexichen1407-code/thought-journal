@@ -49,5 +49,7 @@
 	<string>用于录下你的思考语音并转成文字。</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>用于把你的语音转写成文字记录。</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
