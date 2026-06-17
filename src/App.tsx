@@ -45,7 +45,7 @@ export default function App() {
           <>
             <div className="greeting">
               <div className="greeting-date">{todayLabel()}</div>
-              <h2>Zack 先生，{getGreeting()}</h2>
+              <h2>{getGreeting()}</h2>
               <p>今天有什么思考想要记录?</p>
             </div>
             <Recorder onSaved={refreshEntries} />
