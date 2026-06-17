@@ -36,7 +36,8 @@ workflows:
       - name: 设置签名(首次自动创建证书 + 描述文件)
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @env:CERTIFICATE_PRIVATE_KEY
+          echo "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -A -d > /tmp/ios_dist_key.pem
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @file:/tmp/ios_dist_key.pem
           keychain add-certificates
           xcode-project use-profiles
       - name: 构建 IPA
