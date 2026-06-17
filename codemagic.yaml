@@ -51,4 +51,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # 只上传到 App Store Connect(供内部测试 / 后续提交审核)。
+        # 想做"外部测试"再把下面打开,并在 ASC 填好 TestFlight 测试信息:
+        # submit_to_testflight: true
