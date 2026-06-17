@@ -40,6 +40,9 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create --certificate-key @file:/tmp/ios_dist_key.pem
           keychain add-certificates
           xcode-project use-profiles
+      - name: 设置构建号(每次自增,避免与已上传的重复)
+        script: |
+          cd ios/App && agvtool new-version -all "$BUILD_NUMBER"
       - name: 构建 IPA
         script: |
           xcode-project build-ipa \
