@@ -55,7 +55,7 @@ export function ThemesView({ entries, analysis, onAnalyzed }: Props) {
             <strong>近 7 天状态</strong>
             <div className="muted small">基于最近 7 天的 {recent.length} 条记录</div>
           </div>
-          <button className="ghost small" onClick={run} disabled={loading}>
+          <button className="ghost small outline" onClick={run} disabled={loading}>
             {loading ? '分析中…' : '刷新'}
           </button>
         </div>

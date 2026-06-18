@@ -1,10 +1,12 @@
-import { defineConfig, loadEnv, type Plugin } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Dev-only mirror of the Cloudflare Pages Function: serves POST /api/groq locally,
-// reading the key from .env.local (gitignored) so `npm run dev` works without a key
-// ever reaching the client bundle.
-function groqDevProxy(key: string): Plugin {
+// Dev-only mirror of the production /api/groq route: forwards POST /api/groq to the
+// deployed Cloudflare Worker, which holds GROQ_API_KEY as a Secret. So `npm run dev`
+// gets working AI with no key on this machine and none in the client bundle.
+const WORKER_API = 'https://thought-journal-real.zexichen1407.workers.dev/api/groq'
+
+function groqDevProxy(): Plugin {
   return {
     name: 'groq-dev-proxy',
     configureServer(server) {
@@ -17,16 +19,10 @@ function groqDevProxy(key: string): Plugin {
         let body = ''
         req.on('data', (c) => (body += c))
         req.on('end', async () => {
-          if (!key) {
-            res.statusCode = 500
-            res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ error: { message: 'GROQ_API_KEY missing in .env.local' } }))
-            return
-          }
           try {
-            const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const upstream = await fetch(WORKER_API, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+              headers: { 'Content-Type': 'application/json' },
               body,
             })
             const text = await upstream.text()
@@ -45,11 +41,8 @@ function groqDevProxy(key: string): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-  return {
-    plugins: [react(), groqDevProxy(env.GROQ_API_KEY ?? '')],
-    server: { host: true, allowedHosts: true },
-    preview: { host: true, allowedHosts: true },
-  }
+export default defineConfig({
+  plugins: [react(), groqDevProxy()],
+  server: { host: true, allowedHosts: true },
+  preview: { host: true, allowedHosts: true },
 })

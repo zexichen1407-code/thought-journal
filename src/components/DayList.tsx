@@ -7,6 +7,7 @@ import {
   saveDailySummaries,
   updateEntry,
 } from '../lib/storage';
+import { IconChevron } from './icons';
 
 interface Props {
   entries: Entry[];
@@ -76,10 +77,8 @@ export function DayList({ entries, onChange }: Props) {
     if (!need) return;
 
     generatingRef.current = true;
-    let cancelled = false;
     summarizeDay(need.entries)
       .then((text) => {
-        if (cancelled) return;
         setSummaries((prev) => {
           const next = { ...prev, [need.date]: { count: need.entries.length, text } };
           saveDailySummaries(next);
@@ -92,9 +91,6 @@ export function DayList({ entries, onChange }: Props) {
       .finally(() => {
         generatingRef.current = false;
       });
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries, summaries]);
 
@@ -143,7 +139,10 @@ export function DayList({ entries, onChange }: Props) {
               <div className="day-summary">
                 {s ? s.text : '小结生成中…'}
               </div>
-              <div className="day-toggle">{open ? '收起 ▲' : '展开详情 ▼'}</div>
+              <div className="day-toggle">
+                <span>{open ? '收起' : '展开详情'}</span>
+                <IconChevron size={14} className={open ? 'chev open' : 'chev'} />
+              </div>
             </button>
 
             {open && (

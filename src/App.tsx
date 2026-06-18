@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import type { ComponentType } from 'react';
 import type { Entry, ThemeAnalysis } from './types';
 import { loadAnalysis, loadEntries } from './lib/storage';
 import { Recorder } from './components/Recorder';
 import { DayList } from './components/DayList';
 import { ThemesView } from './components/ThemesView';
+import { IconMic, IconHistory, IconThemes } from './components/icons';
+import { Starfield } from './components/Starfield';
 import './App.css';
+
+type IconCmp = ComponentType<{ size?: number; className?: string }>;
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -21,10 +26,10 @@ function todayLabel(): string {
 
 type Tab = 'record' | 'history' | 'themes';
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'record', label: '记录' },
-  { id: 'history', label: '历史' },
-  { id: 'themes', label: '主题' },
+const TABS: { id: Tab; label: string; Icon: IconCmp }[] = [
+  { id: 'record', label: '记录', Icon: IconMic },
+  { id: 'history', label: '历史', Icon: IconHistory },
+  { id: 'themes', label: '主题', Icon: IconThemes },
 ];
 
 export default function App() {
@@ -35,39 +40,41 @@ export default function App() {
   const refreshEntries = () => setEntries(loadEntries());
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>思考记录</h1>
-      </header>
+    <>
+      <Starfield />
+      <div className="app">
+        <main className="app-main">
+          <div className="view" key={tab}>
+            {tab === 'record' && (
+              <>
+                <div className="greeting">
+                  <div className="greeting-date">{todayLabel()}</div>
+                  <h2>{getGreeting()}</h2>
+                  <p>此刻,你在想些什么?</p>
+                </div>
+                <Recorder onSaved={refreshEntries} />
+              </>
+            )}
+            {tab === 'history' && <DayList entries={entries} onChange={refreshEntries} />}
+            {tab === 'themes' && (
+              <ThemesView entries={entries} analysis={analysis} onAnalyzed={setAnalysis} />
+            )}
+          </div>
+        </main>
 
-      <main className="app-main">
-        {tab === 'record' && (
-          <>
-            <div className="greeting">
-              <div className="greeting-date">{todayLabel()}</div>
-              <h2>{getGreeting()}</h2>
-              <p>今天有什么思考想要记录?</p>
-            </div>
-            <Recorder onSaved={refreshEntries} />
-          </>
-        )}
-        {tab === 'history' && <DayList entries={entries} onChange={refreshEntries} />}
-        {tab === 'themes' && (
-          <ThemesView entries={entries} analysis={analysis} onAnalyzed={setAnalysis} />
-        )}
-      </main>
-
-      <nav className="tabbar">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={tab === t.id ? 'tab active' : 'tab'}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-    </div>
+        <nav className="tabbar">
+          {TABS.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              className={tab === id ? 'tab active' : 'tab'}
+              onClick={() => setTab(id)}
+            >
+              <Icon />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+    </>
   );
 }

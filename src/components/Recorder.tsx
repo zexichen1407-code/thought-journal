@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { addEntry } from '../lib/storage';
+import { IconMic } from './icons';
 
 interface Props {
   onSaved: () => void;
@@ -66,7 +67,7 @@ export function Recorder({ onSaved }: Props) {
         className="draft"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        placeholder="点下面的按钮说话，文字会自动出现在这里，也可以手动修改…"
+        placeholder="轻点下面说出来，或直接在这里写下…"
         rows={6}
       />
 
@@ -84,8 +85,10 @@ export function Recorder({ onSaved }: Props) {
           className={listening ? 'mic recording' : 'mic'}
           onClick={listening ? stop : start}
           aria-label={listening ? '停止录音' : '开始录音'}
-        />
-        <div className="mic-label">{listening ? '正在听…再点一下停止' : '点一下开始说'}</div>
+        >
+          <IconMic size={26} />
+        </button>
+        <div className="mic-label">{listening ? '在听着… 再点一下停下' : '轻点，说出此刻'}</div>
       </div>
     </div>
   );
