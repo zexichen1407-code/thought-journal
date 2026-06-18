@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 // twinkle via oscillating opacity, with an occasional shooting star. Fixed full-screen
 // canvas behind all content. Respects prefers-reduced-motion and pauses when hidden.
 
-const STAR_COUNT = 320;
+const STAR_COUNT = 150;
 
 interface Star {
   angle: number;
@@ -22,6 +22,7 @@ interface Shoot {
 }
 
 const TRAIL = 35; // shooting-star tail length, px
+const SHOOT_CHANCE = 0.0018; // spawn probability per frame — random, ~one every ~10s
 
 export function Starfield() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -118,7 +119,7 @@ export function Starfield() {
     const frame = (t: number) => {
       ctx.clearRect(0, 0, w, h);
       drawStars(t);
-      if (!shoot && Math.random() < 0.01) spawnShoot();
+      if (!shoot && Math.random() < SHOOT_CHANCE) spawnShoot();
       drawShoot();
       raf = requestAnimationFrame(frame);
     };
